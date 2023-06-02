@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 import { onMounted, ref } from "vue";
 import Customer from "./views/CustomerView.vue";
 import Auth from "./views/LoginView.vue";

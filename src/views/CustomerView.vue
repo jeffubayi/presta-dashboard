@@ -14,12 +14,10 @@ import {
   ListGroup,
   ListGroupItem,
 } from "flowbite-vue";
-import { ref, toRefs, onMounted, reactive, watch } from "vue";
+import { ref, toRefs, onMounted } from "vue";
 
-const currentPage = ref(1);
 const isShowModal = ref(false);
 const isEditModal = ref(false);
-const activeTab = ref("first");
 const loading = ref(true);
 const props = defineProps(["session"]);
 const { session } = toRefs(props);
@@ -33,11 +31,6 @@ const loan = ref();
 const approved = ref();
 const branch = ref("");
 const email = ref("");
-
-const customElementsForm = reactive({
-  checkbox: [true],
-  switch: [true],
-});
 
 console.log(`session data`, session);
 
@@ -217,7 +210,6 @@ async function signOut() {
             v-model="phone"
             required
             size="sm"
-            type="tel"
             :value="selectedCustomers.phone"
           />
         </div>
@@ -227,7 +219,6 @@ async function signOut() {
             v-model="email"
             required
             size="sm"
-            type="email"
             :value="selectedCustomers.email"
           />
         </div>
@@ -255,7 +246,6 @@ async function signOut() {
             label="Loan"
             v-model="loan"
             required
-            type="number"
             :value="selectedCustomers.loan"
             size="sm"
           />
@@ -268,14 +258,13 @@ async function signOut() {
                 v-model="approved"
                 required
                 :value="selectedCustomers.approved"
-                type="number"
                 size="sm"
               />
             </div>
           </div>
           <div class="flex items-start">
             <div class="flex items-center h-5">
-              <Input
+              <input
                 id="remember"
                 type="checkbox"
                 :value="selectedCustomers.used"
@@ -327,7 +316,6 @@ async function signOut() {
                 v-model="phone"
                 required
                 size="sm"
-                type="tel"
               />
             </div>
             <div>
@@ -336,7 +324,6 @@ async function signOut() {
                 v-model="email"
                 required
                 size="sm"
-                type="email"
               />
             </div>
             <div>
@@ -374,7 +361,6 @@ async function signOut() {
                 label="Loan"
                 v-model="loan"
                 required
-                type="number"
                 size="sm"
               />
             </div>
@@ -385,14 +371,13 @@ async function signOut() {
                     label="Approved"
                     v-model="approved"
                     required
-                    type="number"
                     size="sm"
                   />
                 </div>
               </div>
               <div class="flex items-start">
                 <div class="flex items-center h-5">
-                  <Input
+                  <input
                     type="checkbox"
                     value=""
                     class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
