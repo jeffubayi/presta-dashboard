@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { supabase } from "../supabase";
 import {
-  Tabs,
-  Tab,
   Modal,
   Input,
   Button,
