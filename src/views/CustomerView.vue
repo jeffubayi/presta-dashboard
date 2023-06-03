@@ -21,6 +21,9 @@ const loading = ref(true);
 const props = defineProps(["session"]);
 const { session } = toRefs(props);
 const customers = ref();
+let count = ref();
+const prevCount = ref(1);
+const nextCount = ref(6);
 const selectedCustomers = ref();
 const name = ref("");
 const phone = ref("");
@@ -33,8 +36,37 @@ const email = ref("");
 const searchItem = ref("");
 const filteredSalesRep = ref("");
 const filteredBranch = ref("");
+const nameSearch = ref("name");
+const salesSearch = ref("salesRep");
+const branchSearch = ref("branch");
 
-console.log(`session data`, session);
+
+//next page
+const inc = async (startNumber: any, increment: any) => {
+  const { data } = await supabase
+    .from("customers")
+    .select(`*`)
+    .range(startNumber, increment);
+  if (data) {
+    customers.value = data;
+    nextCount.value = increment;
+    prevCount.value = startNumber;
+  }
+};
+
+//prev page
+const dec = async (startNumber: any, increment: any) => {
+  const { data } = await supabase
+    .from("customers")
+    .select(`*`)
+    .range(startNumber, increment);
+  if (data) {
+    customers.value = data;
+    nextCount.value = increment;
+    prevCount.value = startNumber;
+  }
+};
+
 
 function closeModal() {
   isShowModal.value = false;
@@ -51,11 +83,10 @@ function showEditModal(payload: any) {
 }
 
 onMounted(() => {
-  // window.setInterval(() => {
   getAllCustomers();
-  // }, 3000);
 });
 
+//get customers
 async function getAllCustomers() {
   try {
     loading.value = true;
@@ -63,11 +94,13 @@ async function getAllCustomers() {
     const { data, error, status } = await supabase
       .from("customers")
       .select(`*`)
-      .limit(6);
+      .range(0, 5);
 
+    const { data: totalCount } = await supabase.from("customers").select(`*`);
     if (error && status !== 406) throw error;
     if (data) {
       customers.value = data;
+      count.value = totalCount?.length;
     }
   } catch (error) {
     console.log(error);
@@ -76,18 +109,22 @@ async function getAllCustomers() {
   }
 }
 
-async function search() {
+//filter customers
+async function search(value: string, target: any) {
+  console.log(`sat`, value.length, target);
   try {
-    loading.value = true;
+    if (value.length > 0) {
+      const { data, error } = await supabase
+        .from("customers")
+        .select(`*`)
+        .like(`${target}`, value);
 
-    const { data, error } = await supabase
-      .from("customers")
-      .select(`*`)
-      .like("name", searchItem.value);
-
-    if (error) throw error;
-    if (data) {
-      customers.value = data;
+      if (error) throw error;
+      if (data) {
+        customers.value = data;
+      }
+    } else {
+      getAllCustomers();
     }
   } catch (error) {
     console.log(error);
@@ -96,48 +133,16 @@ async function search() {
   }
 }
 
-async function filterByBranch() {
-  console.log(`daaa`, filteredBranch.value);
-  try {
-    const { data, error } = await supabase
-      .from("customers")
-      .select(`*`)
-      .like("branch", filteredBranch.value);
-
-    if (error) throw error;
-    if (data) {
-      customers.value = data;
-    }
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-async function filterBySales() {
-  try {
-    const { data, error } = await supabase
-      .from("customers")
-      .select(`*`)
-      .like("branch", filteredSalesRep.value);
-
-    if (error) throw error;
-    if (data) {
-      customers.value = data;
-    }
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-//post
+//post customers
 const addCustomer = async () => {
+  console.log(`add values`, used.value);
   try {
     const customerData = {
       id: Date.now(),
       name: name.value,
-      branch: branch.value || "HQ",
+      branch: branch.value,
       phone: phone.value,
-      salesRep: salesRep.value || "Jane Wahu",
+      salesRep: salesRep.value,
       used: used.value || false,
       loan: loan.value,
       approved: approved.value,
@@ -147,13 +152,14 @@ const addCustomer = async () => {
     const { error } = await supabase.from("customers").insert(customerData);
     if (error) throw error;
     isShowModal.value = false;
+    getAllCustomers();
   } catch (error) {
     console.log(error);
   }
 };
 
-//delete
-async function deleteCustomer(payload: { id: any }) {
+//delete customer
+async function deleteCustomer(payload: { id: string }) {
   try {
     let { error, status } = await supabase
       .from("customers")
@@ -161,13 +167,14 @@ async function deleteCustomer(payload: { id: any }) {
       .match({ id: payload.id });
 
     if (error && status !== 406) throw error;
+    getAllCustomers();
   } catch (error) {
     console.log(error);
   }
 }
 
-//edit
-async function updateCustomer(payload: { id: any }) {
+//edit customer
+async function updateCustomer(payload: { id: string }) {
   try {
     const customerData = {
       id: payload.id,
@@ -175,7 +182,7 @@ async function updateCustomer(payload: { id: any }) {
       branch: branch.value,
       phone: phone.value,
       salesRep: salesRep.value,
-      used: used.value || false,
+      used: used.value,
       loan: loan.value,
       approved: approved.value,
       email: email.value,
@@ -188,12 +195,13 @@ async function updateCustomer(payload: { id: any }) {
 
     if (error && status !== 406) throw error;
     isEditModal.value = false;
+    getAllCustomers();
   } catch (error) {
     console.log(error);
   }
 }
 
-//signout
+//log out user
 async function signOut() {
   try {
     loading.value = true;
@@ -236,7 +244,7 @@ async function signOut() {
         <div class="font-medium dark:text-white">
           <div>Dickson Kibe</div>
           <div class="text-sm text-gray-500 dark:text-gray-400">
-            kibe@presta.co.ke
+            {{ session?.value?.user?.email }}
           </div>
         </div>
       </div>
@@ -246,14 +254,11 @@ async function signOut() {
       </Button>
     </template>
   </Navbar>
-  <!-- <template>
-    <Toast v-if="isShowModal" type="success">
-      Item moved successfully.
-    </Toast>
-  </template> -->
   <Modal size="md" v-if="isEditModal" @close="closeEditModal">
     <template #header>
-      <p>Edit Customer {{ selectedCustomers.name }}</p>
+      <p>
+        Edit Customer: <b>{{ selectedCustomers.name }}</b>
+      </p>
     </template>
     <template #body>
       <form class="space-y-3" is-form @submit.prevent="addCustomer">
@@ -286,23 +291,36 @@ async function signOut() {
           />
         </div>
         <div>
-          <Input
+          <label
+            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >Branch</label
+          >
+          <select
             v-model="branch"
             :initialValue="selectedCustomers.branch"
-            label="Branch"
-            required
-            size="sm"
-          />
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+            <option selected>Select branch</option>
+            <option value="HQ">HQ</option>
+            <option value="Upper Hill">Upper Hill</option>
+            <option value="kisumu">Kisumu</option>
+          </select>
         </div>
         <div>
-          <Input
-            select
+          <label
+            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >Sales Rep</label
+          >
+          <select
             v-model="salesRep"
             :value="selectedCustomers.salesRep"
-            label="Sales Rep"
-            required
-            size="sm"
-          />
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+            <option selected>Select sales Rep</option>
+            <option value="Jane Wahu">Jane Wahu</option>
+            <option value="Tom Ogola">Tom Ogola</option>
+            <option value="Sam Okoye">Sam Okoye</option>
+          </select>
         </div>
         <div>
           <Input
@@ -328,20 +346,8 @@ async function signOut() {
             </div>
           </div>
           <div class="flex items-start">
-            <div class="flex items-center h-5">
-              <Input
-                id="remember"
-                type="checkbox"
-                :value="selectedCustomers.used"
-                class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
-                required
-              />
-            </div>
-            <label
-              for="remember"
-              class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-              >Used</label
-            >
+            <input type="checkbox" id="checkbox" v-model="used" />
+            <label for="checkbox">used</label>
           </div>
         </div>
       </form>
@@ -395,29 +401,29 @@ async function signOut() {
         </div>
         <div>
           <label
-            for="countries"
             class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
             >Branch</label
           >
           <select
+            v-model="branch"
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           >
-            <option selected>Choose a branch</option>
-            <option value="Nairobi">Nairobi</option>
-            <option value="Kisumu">Kisumu</option>
-            <option value="Mombasa">HQ</option>
+            <option selected>Select branch</option>
+            <option value="HQ">HQ</option>
+            <option value="Upper Hill">Upper Hill</option>
+            <option value="kisumu">Kisumu</option>
           </select>
         </div>
         <div>
           <label
-            for="countries"
             class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
             >Sales Rep</label
           >
           <select
+            v-model="salesRep"
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           >
-            <option selected>Choose a sales Rep</option>
+            <option selected>Select sales Rep</option>
             <option value="Jane Wahu">Jane Wahu</option>
             <option value="Tom Ogola">Tom Ogola</option>
             <option value="Sam Okoye">Sam Okoye</option>
@@ -461,14 +467,14 @@ async function signOut() {
         <button
           @click="addCustomer"
           type="button"
-          class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+          class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
         >
           Submit
         </button>
         <button
           @click="closeModal"
           type="button"
-          class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600"
+          class="w-full text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600"
         >
           Cancel
         </button>
@@ -502,37 +508,32 @@ async function signOut() {
         <form>
           <div class="flex justify-between">
             <div class="flex justify-start gap-2">
-              <form
-                class="flex items-center"
-                is-form
-                @submit.prevent="filterByBranch"
-              >
+              <form class="flex items-center">
                 <select
-                  id="branch"
                   v-model="filteredBranch"
-                  v-on:input="filterByBranch"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-1/10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  @input="search(filteredBranch, branchSearch)"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 >
-                  <option selected>Select Branch</option>
+                  <option selected>All branches</option>
+                  <option value="kisumu">Kisumu</option>
+                  <option value="Upper Hill">Upper Hill</option>
                   <option value="HQ">HQ</option>
-                  <option value="Mombasa">Mombasa</option>
-                  <option value="Kisumu">Kisumu</option>
                 </select>
               </form>
               <form class="flex items-center">
                 <select
-                  id="sales"
-                  v-bind:value="filteredSalesRep"
-                  v-on:input="filterBySales"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-1/10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  v-model="filteredSalesRep"
+                  @input="search(filteredSalesRep, salesSearch)"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 >
-                  <option selected>Select Sales Rep</option>
+                  <option selected>All sales Rep</option>
                   <option value="Jane Wahu">Jane Wahu</option>
-                  <option value="Tom Ogola">Tom Ogol</option>
+                  <option value="Tom Ogola">Tom Ogola</option>
+                  <option value="Sam Okoye">Sam Okoye</option>
                 </select>
               </form>
             </div>
-            <form class="flex items-center" is-form @submit.prevent="search">
+            <form class="flex items-center">
               <div class="relative w-full">
                 <div
                   class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
@@ -552,6 +553,7 @@ async function signOut() {
                   </svg>
                 </div>
                 <input
+                  @input="search(searchItem, nameSearch)"
                   size="sm"
                   v-model="searchItem"
                   type="text"
@@ -561,26 +563,6 @@ async function signOut() {
                   required
                 />
               </div>
-              <button
-                type="submit"
-                class="p-2.5 ml-2 text-sm font-medium text-white bg-blue-700 rounded-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-              >
-                <svg
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  ></path>
-                </svg>
-                <span class="sr-only">Search</span>
-              </button>
             </form>
           </div>
         </form>
@@ -679,17 +661,8 @@ async function signOut() {
   <div
     class="sticky bottom-0 right-0 items-center w-full p-4 bg-white border-t border-gray-200 sm:flex sm:justify-between dark:bg-gray-800 dark:border-gray-700"
   >
-    <div class="flex items-center mb-4 sm:mb-0">
-      <span class="text-sm font-normal text-gray-500 dark:text-gray-400"
-        >Showing
-        <span class="font-semibold text-gray-900 dark:text-white">1-6</span> of
-        <span class="font-semibold text-gray-900 dark:text-white"
-          >20</span
-        ></span
-      >
-    </div>
     <div class="flex items-center space-x-3">
-      <Button color="dark" outline square>
+      <Button color="dark" @click="dec(0, 5)" outline square>
         <svg
           class="w-5 h-5"
           fill="currentColor"
@@ -704,7 +677,7 @@ async function signOut() {
         </svg>
       </Button>
 
-      <Button color="dark" outline square>
+      <Button color="dark" outline @click="inc(6, 12)" square>
         <svg
           class="w-5 h-5"
           fill="currentColor"
@@ -718,6 +691,18 @@ async function signOut() {
           ></path>
         </svg>
       </Button>
+    </div>
+    <div class="flex items-center mb-4 sm:mb-0">
+      <span class="text-sm font-normal text-gray-500 dark:text-gray-400"
+        >Showing
+        <span class="font-semibold text-gray-900 dark:text-white"
+          >{{ prevCount }}-{{ nextCount }}</span
+        >
+        of
+        <span class="font-semibold text-gray-900 dark:text-white">
+          {{ count }}</span
+        ></span
+      >
     </div>
   </div>
 </template>
