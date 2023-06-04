@@ -330,10 +330,14 @@ async function signOut() {
             :initialValue="selectedCustomers.branch"
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           >
-            <option selected>Select branch</option>
-            <option value="HQ">HQ</option>
-            <option value="Upper Hill">Upper Hill</option>
-            <option value="kisumu">Kisumu</option>
+            <option value="">Select Branch</option>
+            <option
+              v-for="item in branchItem"
+              :value="item.name"
+              :key="item.id"
+            >
+              {{ item.name }}
+            </option>
           </select>
         </div>
         <div>
@@ -346,10 +350,14 @@ async function signOut() {
             :initialValue="selectedCustomers.salesRep"
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           >
-            <option selected>Select sales Rep</option>
-            <option value="Jane Wahu">Jane Wahu</option>
-            <option value="Tom Ogola">Tom Ogola</option>
-            <option value="Sam Okoye">Sam Okoye</option>
+          <option value="">Select Sales Rep</option>
+            <option
+              v-for="item in salesItem"
+              :value="item.name"
+              :key="item.id"
+            >
+              {{ item.name }}
+            </option>
           </select>
         </div>
         <div>
