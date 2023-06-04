@@ -9,7 +9,7 @@ import {
   NavbarCollapse,
   NavbarLink,
 } from "flowbite-vue";
-import { ref, toRefs, onMounted, reactive } from "vue";
+import { ref, toRefs, onMounted, reactive, computed } from "vue";
 
 const isShowModal = ref(false);
 const isEditModal = ref(false);
@@ -18,8 +18,6 @@ const props = defineProps(["session"]);
 const { session } = toRefs(props);
 const customers = ref();
 let count = ref();
-const prevCount = ref(1);
-const nextCount = ref(6);
 const selectedCustomers = ref();
 const name = ref("");
 const phone = ref("");
@@ -30,11 +28,11 @@ const approved = ref();
 const branch = ref("");
 const email = ref("");
 const searchItem = ref("");
-const filteredSalesRep = ref("");
-const filteredBranch = ref("");
-const nameSearch = ref("name");
+const userEmail = ref(session?.value?.user?.email);
 const salesSearch = ref("salesRep");
 const branchSearch = ref("branch");
+const perPage = ref(6);
+const currentPage = ref(0);
 const branchItem = reactive([
   { id: 1, name: "HQ" },
   { id: 2, name: "Upper Hill" },
@@ -46,31 +44,26 @@ const salesItem = reactive([
   { id: 3, name: "Sam Okoye" },
 ]);
 
-//next page
-const inc = async (startNumber: any, increment: any) => {
-  const { data } = await supabase
-    .from("customers")
-    .select(`*`)
-    .range(startNumber, increment);
-  if (data) {
-    customers.value = data;
-    nextCount.value = increment;
-    prevCount.value = startNumber;
-  }
-};
+const itemsPaginated = computed(() =>
+  customers.value?.slice(
+    perPage.value * currentPage.value,
+    perPage.value * (currentPage.value + 1)
+  )
+);
 
-//prev page
-const dec = async (startNumber: any, increment: any) => {
-  const { data } = await supabase
-    .from("customers")
-    .select(`*`)
-    .range(startNumber, increment);
-  if (data) {
-    customers.value = data;
-    nextCount.value = increment;
-    prevCount.value = startNumber;
+const numPages = computed(() => Math.ceil(customers.value?.length / perPage.value));
+
+const currentPageHuman = computed(() => currentPage.value + 1);
+
+const pagesList = computed(() => {
+  const pagesList = [];
+
+  for (let i = 0; i < numPages.value; i++) {
+    pagesList.push(i);
   }
-};
+
+  return pagesList;
+});
 
 function closeModal() {
   isShowModal.value = false;
@@ -98,13 +91,10 @@ async function getAllCustomers() {
     const { data, error, status } = await supabase
       .from("customers")
       .select(`*`)
-      .range(0, 5);
-
-    const { data: totalCount } = await supabase.from("customers").select(`*`);
     if (error && status !== 406) throw error;
     if (data) {
       customers.value = data;
-      count.value = totalCount?.length;
+      count.value = data?.length;
     }
   } catch (error) {
     console.log(error);
@@ -113,33 +103,42 @@ async function getAllCustomers() {
   }
 }
 
-//filter customers
-async function search(value: string, target: any) {
-  console.log(`sat`, value.length, target);
+//search customers name,email,phone
+async function search(value: string) {
   try {
     if (value.length > 0) {
-      const { data, error } = await supabase
+      let { data } = await supabase
         .from("customers")
-        .select(`*`)
-        .like(`${target}`, value);
-
-      if (error) throw error;
-      if (data) {
-        customers.value = data;
+        .select()
+        .like("name", value);
+      let { data: phone } = await supabase
+        .from("customers")
+        .select()
+        .like("phone", value);
+      let { data: email } = await supabase
+        .from("customers")
+        .select()
+        .like("email", value);
+      if (data || phone || email) {
+        customers.value =
+          data?.length > 0
+            ? data
+            : email?.length > 0
+            ? email
+            : phone?.length > 0
+            ? phone
+            : customers.value;
       }
     } else {
       getAllCustomers();
     }
   } catch (error) {
     console.log(error);
-  } finally {
-    loading.value = false;
   }
 }
 
 //post customers
 const addCustomer = async () => {
-  console.log(`add values`, used.value);
   try {
     const customerData = {
       id: Date.now(),
@@ -177,6 +176,22 @@ async function deleteCustomer(payload: { id: string }) {
   }
 }
 
+//filter by branch sales
+async function filter(event: any, target: any) {
+  if (event?.target?.value.length > 0) {
+    const { data, error } = await supabase
+      .from("customers")
+      .select()
+      .like(`${target}`, event?.target?.value);
+    if (error) throw error;
+    if (data) {
+      customers.value = data;
+    }
+  } else {
+    getAllCustomers();
+  }
+}
+
 //edit customer
 async function updateCustomer(payload: { id: string }) {
   try {
@@ -191,7 +206,6 @@ async function updateCustomer(payload: { id: string }) {
       approved: approved.value,
       email: email.value,
     };
-    console.log(`CUS`, customerData);
     let { error, status } = await supabase
       .from("customers")
       .upsert(customerData)
@@ -220,7 +234,7 @@ async function signOut() {
 </script>
 
 <template>
-    <!-- navbar -->
+  <!-- navbar -->
   <Navbar>
     <template #logo>
       <NavbarLogo
@@ -249,7 +263,7 @@ async function signOut() {
         <div class="font-medium dark:text-white">
           <div>Dickson Kibe</div>
           <div class="text-sm text-gray-500 dark:text-gray-400">
-            {{ session?.value?.user?.email || "kibe@presta.co.ke" }}
+            {{ userEmail || "Not signed in" }}
           </div>
         </div>
       </div>
@@ -260,10 +274,7 @@ async function signOut() {
     </template>
   </Navbar>
 
-
-
-
-    <!--edit modal -->
+  <!--edit modal -->
   <Modal size="md" v-if="isEditModal" @close="closeEditModal">
     <template #header>
       <p>
@@ -393,9 +404,6 @@ async function signOut() {
       </div>
     </template>
   </Modal>
-
-
-
 
   <!-- create modal -->
   <Modal size="md" v-if="isShowModal" @close="closeModal">
@@ -573,8 +581,7 @@ async function signOut() {
             <div class="flex justify-start gap-2">
               <form class="flex items-center">
                 <select
-                  v-model="filteredBranch"
-                  @input="search(filteredBranch, branchSearch)"
+                  @change="filter($event, branchSearch)"
                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 >
                   <option value="">Select Branch</option>
@@ -589,8 +596,7 @@ async function signOut() {
               </form>
               <form class="flex items-center">
                 <select
-                  v-model="filteredSalesRep"
-                  @input="search(filteredSalesRep, salesSearch)"
+                  @input="filter($event, salesSearch)"
                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 >
                   <option value="">Select Sales Rep</option>
@@ -624,7 +630,7 @@ async function signOut() {
                   </svg>
                 </div>
                 <input
-                  @input="search(searchItem, nameSearch)"
+                  @input="search(searchItem)"
                   size="sm"
                   v-model="searchItem"
                   type="text"
@@ -660,7 +666,7 @@ async function signOut() {
       </thead>
       <tbody>
         <tr
-          v-for="customer in customers"
+          v-for="customer in itemsPaginated"
           :key="customer.id"
           class="bg-white border-b dark:bg-gray-800 dark:border-gray-700"
         >
@@ -733,46 +739,28 @@ async function signOut() {
     class="sticky bottom-0 right-0 items-center w-full p-4 bg-white border-t border-gray-200 sm:flex sm:justify-between dark:bg-gray-800 dark:border-gray-700"
   >
     <div class="flex items-center space-x-3">
-      <Button color="dark" @click="dec(0, 5)" outline square>
-        <svg
-          class="w-5 h-5"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            fill-rule="evenodd"
-            d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-            clip-rule="evenodd"
-          ></path>
-        </svg>
-      </Button>
-
-      <Button color="dark" outline @click="inc(6, 12)" square>
-        <svg
-          class="w-5 h-5"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            fill-rule="evenodd"
-            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-            clip-rule="evenodd"
-          ></path>
-        </svg>
+      <Button
+        v-for="page in pagesList"
+        :key="page"
+        :active="page === currentPage"
+        :label="page + 1"
+        :color="page === currentPage ? 'default' : 'light'"
+        @click="currentPage = page"
+        size="sm"
+      >
+       {{page + 1}}
+        
       </Button>
     </div>
     <div class="flex items-center mb-4 sm:mb-0">
       <span class="text-sm font-normal text-gray-500 dark:text-gray-400"
-        >Showing
-        <span class="font-semibold text-gray-900 dark:text-white"
-          >{{ prevCount }}-{{ nextCount }}</span
+        >Showing Page
+        <span class="bg-gray-100 text-gray-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300"
+          >{{ currentPageHuman }} of {{ numPages }}.</span
         >
-        of
-        <span class="font-semibold text-gray-900 dark:text-white">
-          {{ count }}</span
-        ></span
+        Total
+        <span class="bg-gray-100 text-gray-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300">{{ count }}</span>
+       </span
       >
     </div>
   </div>
