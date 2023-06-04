@@ -8,12 +8,8 @@ import {
   NavbarLogo,
   NavbarCollapse,
   NavbarLink,
-  Dropdown,
-  ListGroup,
-  ListGroupItem,
-  Toast,
 } from "flowbite-vue";
-import { ref, toRefs, onMounted } from "vue";
+import { ref, toRefs, onMounted, reactive } from "vue";
 
 const isShowModal = ref(false);
 const isEditModal = ref(false);
@@ -39,7 +35,16 @@ const filteredBranch = ref("");
 const nameSearch = ref("name");
 const salesSearch = ref("salesRep");
 const branchSearch = ref("branch");
-
+const branchItem = reactive([
+  { id: 1, name: "HQ" },
+  { id: 2, name: "Upper Hill" },
+  { id: 3, name: "Kisumu" },
+]);
+const salesItem = reactive([
+  { id: 1, name: "Jane Wahu" },
+  { id: 2, name: "Tom Ogola" },
+  { id: 3, name: "Sam Okoye" },
+]);
 
 //next page
 const inc = async (startNumber: any, increment: any) => {
@@ -66,7 +71,6 @@ const dec = async (startNumber: any, increment: any) => {
     prevCount.value = startNumber;
   }
 };
-
 
 function closeModal() {
   isShowModal.value = false;
@@ -216,6 +220,7 @@ async function signOut() {
 </script>
 
 <template>
+    <!-- navbar -->
   <Navbar>
     <template #logo>
       <NavbarLogo
@@ -244,7 +249,7 @@ async function signOut() {
         <div class="font-medium dark:text-white">
           <div>Dickson Kibe</div>
           <div class="text-sm text-gray-500 dark:text-gray-400">
-            {{ session?.value?.user?.email }}
+            {{ session?.value?.user?.email || "kibe@presta.co.ke" }}
           </div>
         </div>
       </div>
@@ -254,6 +259,11 @@ async function signOut() {
       </Button>
     </template>
   </Navbar>
+
+
+
+
+    <!--edit modal -->
   <Modal size="md" v-if="isEditModal" @close="closeEditModal">
     <template #header>
       <p>
@@ -261,7 +271,12 @@ async function signOut() {
       </p>
     </template>
     <template #body>
-      <form class="space-y-3" is-form @submit.prevent="addCustomer">
+      <form
+        ref="anyName"
+        class="space-y-3"
+        is-form
+        @submit.prevent="addCustomer"
+      >
         <div>
           <Input
             label="Name"
@@ -275,9 +290,10 @@ async function signOut() {
           <Input
             label="Phone Number"
             v-model="phone"
+            :value="selectedCustomers.phone"
             required
             size="sm"
-            type="tel"
+            type="text"
           />
         </div>
         <div>
@@ -286,7 +302,7 @@ async function signOut() {
             v-model="email"
             required
             size="sm"
-            type="email"
+            type="text"
             :value="selectedCustomers.email"
           />
         </div>
@@ -313,7 +329,7 @@ async function signOut() {
           >
           <select
             v-model="salesRep"
-            :value="selectedCustomers.salesRep"
+            :initialValue="selectedCustomers.salesRep"
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           >
             <option selected>Select sales Rep</option>
@@ -327,7 +343,7 @@ async function signOut() {
             label="Loan"
             v-model="loan"
             required
-            type="number"
+            type="text"
             :value="selectedCustomers.loan"
             size="sm"
           />
@@ -340,13 +356,19 @@ async function signOut() {
                 v-model="approved"
                 required
                 :value="selectedCustomers.approved"
-                type="number"
+                type="text"
                 size="sm"
               />
             </div>
           </div>
           <div class="flex items-start">
-            <input type="checkbox" id="checkbox" v-model="used" />
+            <input
+              type="checkbox"
+              id="checkbox"
+              v-model="used"
+              class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+              required
+            />
             <label for="checkbox">used</label>
           </div>
         </div>
@@ -372,31 +394,66 @@ async function signOut() {
     </template>
   </Modal>
 
+
+
+
+  <!-- create modal -->
   <Modal size="md" v-if="isShowModal" @close="closeModal">
     <template #header>
       <p>New Customer</p>
     </template>
     <template #body>
-      <form class="space-y-4" is-form @submit.prevent="addCustomer">
+      <form class="space-y-4" @submit.prevent="addCustomer">
         <div>
-          <Input label="Name" v-model="name" required size="sm" />
-        </div>
-        <div>
-          <Input
-            label="Phone Number"
-            v-model="phone"
+          <label
+            for="small-input"
+            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >Name</label
+          >
+          <input
+            type="text"
+            v-model="name"
             required
-            size="sm"
-            type="tel"
+            class="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 sm:text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           />
         </div>
         <div>
-          <Input
-            label="Email Address"
+          <label
+            for="small-input"
+            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >Phone Number</label
+          >
+          <input
+            v-model="phone"
+            required
+            type="tel"
+            class="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 sm:text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          />
+        </div>
+        <div>
+          <label
+            for="small-input"
+            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >Email Address</label
+          >
+          <input
             v-model="email"
             required
-            size="sm"
             type="email"
+            class="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 sm:text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          />
+        </div>
+        <div>
+          <label
+            for="approved"
+            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >Loan</label
+          >
+          <input
+            v-model="loan"
+            required
+            type="number"
+            class="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 sm:text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           />
         </div>
         <div>
@@ -405,13 +462,18 @@ async function signOut() {
             >Branch</label
           >
           <select
+            id="underline_select"
             v-model="branch"
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           >
-            <option selected>Select branch</option>
-            <option value="HQ">HQ</option>
-            <option value="Upper Hill">Upper Hill</option>
-            <option value="kisumu">Kisumu</option>
+            <option value="">Select Branch</option>
+            <option
+              v-for="item in branchItem"
+              :value="item.name"
+              :key="item.id"
+            >
+              {{ item.name }}
+            </option>
           </select>
         </div>
         <div>
@@ -423,41 +485,42 @@ async function signOut() {
             v-model="salesRep"
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           >
-            <option selected>Select sales Rep</option>
-            <option value="Jane Wahu">Jane Wahu</option>
-            <option value="Tom Ogola">Tom Ogola</option>
-            <option value="Sam Okoye">Sam Okoye</option>
+            <option value="">Select Sales Rep</option>
+            <option v-for="item in salesItem" :value="item.name" :key="item.id">
+              {{ item.name }}
+            </option>
           </select>
         </div>
-        <div>
-          <Input label="Loan" v-model="loan" required type="number" size="sm" />
-        </div>
+
         <div class="flex justify-between">
           <div class="flex items-start">
-            <div class="flex items-center h-5 mt-2 mb-1">
-              <Input
+            <div>
+              <label
+                for="approved"
+                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >Approved</label
+              >
+              <input
                 label="Approved"
                 v-model="approved"
                 required
                 type="number"
                 size="sm"
+                class="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 sm:text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
               />
             </div>
           </div>
           <div class="flex items-start">
-            <div class="flex items-center h-5">
-              <Input
+            <div>
+              <input
                 type="checkbox"
-                value=""
-                class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
+                id="checkbox"
+                v-model="used"
+                class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
                 required
               />
+              <label for="checkbox">used</label>
             </div>
-            <label
-              for="remember"
-              class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-              >Used</label
-            >
           </div>
         </div>
       </form>
@@ -514,10 +577,14 @@ async function signOut() {
                   @input="search(filteredBranch, branchSearch)"
                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 >
-                  <option selected>All branches</option>
-                  <option value="kisumu">Kisumu</option>
-                  <option value="Upper Hill">Upper Hill</option>
-                  <option value="HQ">HQ</option>
+                  <option value="">Select Branch</option>
+                  <option
+                    v-for="item in branchItem"
+                    :value="item.name"
+                    :key="item.id"
+                  >
+                    {{ item.name }}
+                  </option>
                 </select>
               </form>
               <form class="flex items-center">
@@ -526,10 +593,14 @@ async function signOut() {
                   @input="search(filteredSalesRep, salesSearch)"
                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 >
-                  <option selected>All sales Rep</option>
-                  <option value="Jane Wahu">Jane Wahu</option>
-                  <option value="Tom Ogola">Tom Ogola</option>
-                  <option value="Sam Okoye">Sam Okoye</option>
+                  <option value="">Select Sales Rep</option>
+                  <option
+                    v-for="item in salesItem"
+                    :value="item.name"
+                    :key="item.id"
+                  >
+                    {{ item.name }}
+                  </option>
                 </select>
               </form>
             </div>
