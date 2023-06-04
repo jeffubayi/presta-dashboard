@@ -51,7 +51,9 @@ const itemsPaginated = computed(() =>
   )
 );
 
-const numPages = computed(() => Math.ceil(customers.value?.length / perPage.value));
+const numPages = computed(() =>
+  Math.ceil(customers.value?.length / perPage.value)
+);
 
 const currentPageHuman = computed(() => currentPage.value + 1);
 
@@ -75,6 +77,7 @@ async function closeEditModal() {
   isEditModal.value = false;
 }
 function showEditModal(payload: any) {
+  console.log(`selected`, payload);
   isEditModal.value = true;
   selectedCustomers.value = payload;
 }
@@ -90,7 +93,7 @@ async function getAllCustomers() {
 
     const { data, error, status } = await supabase
       .from("customers")
-      .select(`*`)
+      .select(`*`);
     if (error && status !== 406) throw error;
     if (data) {
       customers.value = data;
@@ -107,25 +110,25 @@ async function getAllCustomers() {
 async function search(value: string) {
   try {
     if (value.length > 0) {
-      let { data } = await supabase
+      const { data } = await supabase
         .from("customers")
         .select()
         .like("name", value);
-      let { data: phone } = await supabase
+      const { data: phone } = await supabase
         .from("customers")
         .select()
         .like("phone", value);
-      let { data: email } = await supabase
+      const { data: email } = await supabase
         .from("customers")
         .select()
         .like("email", value);
-      if (data || phone || email) {
+      if (Array.isArray(data) && Array.isArray(phone) && Array.isArray(email)) {
         customers.value =
-          data?.length > 0
+          data.length > 0
             ? data
-            : email?.length > 0
+            : email.length > 0
             ? email
-            : phone?.length > 0
+            : phone.length > 0
             ? phone
             : customers.value;
       }
@@ -177,7 +180,7 @@ async function deleteCustomer(payload: { id: string }) {
 }
 
 //filter by branch sales
-async function filter(event: any, target: any) {
+async function filter(event: any, target: string) {
   if (event?.target?.value.length > 0) {
     const { data, error } = await supabase
       .from("customers")
@@ -254,14 +257,14 @@ async function signOut() {
     </template>
 
     <template #right-side>
-      <div class="flex items-center space-x-4 mx-1">
+      <div class="flex items-center space-x-2 mx-2">
         <img
           class="w-9 h-9 rounded-full"
           src="https://w7.pngwing.com/pngs/754/2/png-transparent-samsung-galaxy-a8-a8-user-login-telephone-avatar-pawn-blue-angle-sphere-thumbnail.png"
           alt=""
         />
         <div class="font-medium dark:text-white">
-          <div>Dickson Kibe</div>
+          <div>Welcome</div>
           <div class="text-sm text-gray-500 dark:text-gray-400">
             {{ userEmail || "Not signed in" }}
           </div>
@@ -584,7 +587,7 @@ async function signOut() {
                   @change="filter($event, branchSearch)"
                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 >
-                  <option value="">Select Branch</option>
+                  <option value="">All Branches</option>
                   <option
                     v-for="item in branchItem"
                     :value="item.name"
@@ -599,7 +602,7 @@ async function signOut() {
                   @input="filter($event, salesSearch)"
                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 >
-                  <option value="">Select Sales Rep</option>
+                  <option value="">All Sales Rep</option>
                   <option
                     v-for="item in salesItem"
                     :value="item.name"
@@ -636,7 +639,7 @@ async function signOut() {
                   type="text"
                   id="simple-search"
                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="Search for..."
+                  placeholder="Search for name,phone..."
                   required
                 />
               </div>
@@ -748,20 +751,22 @@ async function signOut() {
         @click="currentPage = page"
         size="sm"
       >
-       {{page + 1}}
-        
+        {{ page + 1 }}
       </Button>
     </div>
     <div class="flex items-center mb-4 sm:mb-0">
       <span class="text-sm font-normal text-gray-500 dark:text-gray-400"
         >Showing Page
-        <span class="bg-gray-100 text-gray-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300"
+        <span
+          class="bg-gray-100 text-gray-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300"
           >{{ currentPageHuman }} of {{ numPages }}.</span
         >
         Total
-        <span class="bg-gray-100 text-gray-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300">{{ count }}</span>
-       </span
-      >
+        <span
+          class="bg-gray-100 text-gray-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300"
+          >{{ count }}</span
+        >
+      </span>
     </div>
   </div>
 </template>
