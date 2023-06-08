@@ -1,25 +1,9 @@
-<script setup>
-import { onMounted, ref } from "vue";
-import Customer from "./views/CustomerView.vue";
-import Auth from "./views/LoginView.vue";
-import { supabase } from "./supabase";
-
-const session = ref();
-
-onMounted(() => {
-  supabase.auth.getSession().then(({ data }) => {
-    session.value = data.session;
-  });
-
-  supabase.auth.onAuthStateChange((_, _session) => {
-    session.value = _session;
-  });
-});
+<script setup lang="ts">
+import { RouterView } from "vue-router";
+import Navbar from "./components/NavBar.vue";
 </script>
 
 <template>
-  <div class="container m-auto">
-    <Customer v-if="session" :session="session" />
-    <Auth v-else />
-  </div>
+  <Navbar />
+  <RouterView />
 </template>
