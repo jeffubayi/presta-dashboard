@@ -30,6 +30,3 @@ npm run dev
 5. Uses supabase-js to interact with the PostgresQL database, listen to database changes, invoke node Edge Functions, build login and user management functionality, 
 
 
-<img width="1423" alt="Screenshot 2023-06-04 at 21 59 13" src="https://github.com/jeffubayi/presta-dashboard/assets/47192245/36914a83-1c04-490c-b565-9224ff7b809c">
-
-
