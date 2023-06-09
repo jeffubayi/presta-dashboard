@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, reactive, computed } from "vue";
+import { ref, onMounted, reactive, computed,toRefs  } from "vue";
 import { Modal, Input, Button, Alert } from "flowbite-vue";
 import { supabase } from "../supabase";
 import { useMainStore } from "../stores/main";
@@ -8,6 +8,8 @@ const mainStore = useMainStore();
 
 const clients = computed(() => mainStore.customers);
 console.log(`clients 1`, clients);
+const props = defineProps(['session'])
+const { session } = toRefs(props)
 const isShowModal = ref<boolean>(false);
 const isEditModal = ref<boolean>(false);
 const loading = ref<boolean>(true);

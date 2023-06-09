@@ -3,7 +3,7 @@ import { onMounted, ref } from "vue";
 
 import LoginView from "../components/SignUp.vue";
 import { supabase } from "../supabase";
-import Footer from "../components/BottomFooter.vue";
+import CustomerView from "./CustomerView.vue";
 
 const session = ref();
 
@@ -20,7 +20,7 @@ onMounted(() => {
 
 <template>
   <main>
-    <Footer v-if="session" />
+    <CustomerView v-if="session" />
     <LoginView v-else />
   </main>
 </template>
