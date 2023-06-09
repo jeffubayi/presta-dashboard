@@ -2,7 +2,7 @@
 import { supabase } from "../supabase";
 import { onMounted, ref, toRefs, reactive } from "vue";
 import { Alert } from "flowbite-vue";
-import { useMainStore } from "@/stores/main";
+import { useMainStore } from "../stores/main";
 
 const mainStore = useMainStore();
 const profileForm = reactive({
@@ -28,7 +28,7 @@ onMounted(() => {
 async function getProfile() {
   try {
     loading.value = true;
-    const { user } = session.value;
+    const { user } = session?.value;
 
     let { data, error, status } = await supabase
       .from("profile")

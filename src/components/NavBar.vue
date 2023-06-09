@@ -8,10 +8,10 @@ import {
   NavbarLink,
 } from "flowbite-vue";
 import { onMounted, ref, computed, reactive } from "vue";
-import router from "@/router";
+import router from "../router";
 
 import { supabase } from "../supabase";
-import { useMainStore } from "@/stores/main";
+import { useMainStore } from "../stores/main";
 
 const mainStore = useMainStore();
 const session = ref();
@@ -79,8 +79,8 @@ const signUp = async () => {
     </template>
     <template v-if="session" #default="{ isShowMenu }">
       <NavbarCollapse :isShowMenu="isShowMenu">
-        <NavbarLink v-if="currentRouteName" link="/">Home</NavbarLink>
-        <NavbarLink is-active link="/customers">Customers</NavbarLink>
+        <NavbarLink link="/">Home</NavbarLink>
+        <NavbarLink link="/customers">Customers</NavbarLink>
         <NavbarLink link="/profile">Profile</NavbarLink>
       </NavbarCollapse>
     </template>

@@ -508,7 +508,6 @@ async function updateCustomer(payload: { id: string }) {
                   v-model="approved"
                   required
                   type="number"
-                  size="sm"
                   class="block w-full p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 sm:text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 />
               </div>
@@ -626,7 +625,6 @@ async function updateCustomer(payload: { id: string }) {
                   </div>
                   <input
                     @input="search(searchItem)"
-                    size="sm"
                     v-model="searchItem"
                     type="text"
                     id="simple-search"
